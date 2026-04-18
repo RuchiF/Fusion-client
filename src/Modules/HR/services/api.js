@@ -12,6 +12,8 @@ const handleResponse = async (response) => {
 
 const normalizeInboxRow = (item) => ({
   id: item.id || item.file_id,
+  file_id: item.id || item.file_id,
+  form_id: item.src_object_id,
   user: item.sent_by_user || item.uploader_name || item.user || item.name,
   name: item.sent_by_user || item.uploader_name || item.user || item.name,
   designation:
@@ -385,4 +387,54 @@ export const getOutbox = async (fromDate = "") => {
   });
   const data = await handleResponse(resp);
   return data;
+};
+
+// LTC Approval Actions
+export const approveLtcForm = async (fileId, formId, nextReceiver, nextReceiverDesignation, remarks = "") => {
+  const fileMetadata = {
+    file_id: fileId,
+    receiver: nextReceiver,
+    receiver_designation: nextReceiverDesignation,
+    remarks: remarks,
+    file_extra_JSON: { type: "LTC" },
+  };
+
+  const formData = {
+    approved: true,
+  };
+
+  const resp = await fetch(`/hr2/api/ltc/?id=${formId}`, {
+    method: "PUT",
+    headers: {
+      ...authHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify([fileMetadata, formData]),
+  });
+  return handleResponse(resp);
+};
+
+export const rejectLtcForm = async (fileId, formId, remarks = "") => {
+  const fileMetadata = {
+    file_id: fileId,
+    receiver: "",
+    receiver_designation: "",
+    remarks: remarks,
+    file_extra_JSON: { type: "LTC" },
+  };
+
+  const formData = {
+    approved: false,
+    rejection_remarks: remarks,
+  };
+
+  const resp = await fetch(`/hr2/api/ltc/?id=${formId}`, {
+    method: "PUT",
+    headers: {
+      ...authHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify([fileMetadata, formData]),
+  });
+  return handleResponse(resp);
 };
